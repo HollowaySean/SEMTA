@@ -9,6 +9,7 @@ import numpy as np
 import scipy.constants as constants
 import scipy.io as sio
 import csv
+import json
 
 
 
@@ -502,23 +503,38 @@ def TrackingMultiBidirectional(trackMultiIn, trackParams):
     # Return data structure
     return trackMultiIn
 
+# Set up tracking parameters
+def SetupParameters(instanceFolder):
+
+    # Define defaults
+    defaultParams = dict(
+        max_vel = 250,
+        max_acc = 1,
+        dist_thresh = 13.8,
+        sigma_v = (0.09, 0)
+    )
+
+    # Assemble file path
+    paramFile = os.path.join(instanceFolder, 'params.json')
+
+    # If file exists, read from file
+    if os.path.exists(paramFile):
+        with open(paramFile, 'r') as jsonFile:
+            paramsIn = json.load(jsonFile)
+
+    # Otherwise, save default parameters to file
+    else:
+        with open(paramFile, 'w') as jsonFile:
+            json.dump(defaultParams, jsonFile, indent=4)
+            paramsIn = defaultParams
+
+    return paramsIn
+
 
 
 ### Main ###
 
 def ProcessFiles(foldername):
-
-    # Set tracking parameters
-    trackParams = dict(
-        max_vel = 250,
-        max_acc = 1,
-        dist_thresh = 13.8,
-        miss_max = 5,
-        sigma_v = (0.09, 0),
-        bi_multi = True,
-        bi_single = True
-    )
-
 
     ### Read input data ###
 
@@ -526,6 +542,10 @@ def ProcessFiles(foldername):
     dirPath = os.path.dirname(os.path.realpath(__file__))
     inputPath = os.path.join(dirPath, 'Input', foldername)
     outputPath = os.path.join(dirPath, 'Output', foldername)
+    instancePath = os.path.join(dirPath, 'Instance')
+
+    # Get tracking parameters
+    trackParams = SetupParameters(instancePath)
 
     # Discover files in directory 
     dataIn = []
@@ -653,3 +673,6 @@ def ProcessFiles(foldername):
             plt.ylim(ylims)
             plt.savefig(os.path.join(outputPath, filenameList[rx] + '.png'))
             plt.close()
+
+if __name__ == '__main__':
+    ProcessFiles('AsyncTracking')
