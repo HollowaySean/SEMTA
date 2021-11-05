@@ -4,7 +4,6 @@ classdef RadarScenario < handle
     properties
         multi
         tracking_single
-        tracking_single_raw
         tracking_multi
         rcs
         traj
@@ -16,6 +15,7 @@ classdef RadarScenario < handle
         detection
         flags = struct('frame', 0);
         timing
+        results
     end
     
     methods
@@ -414,6 +414,57 @@ classdef RadarScenario < handle
             ylim(midLim + diffLim*[-1, 1]);
             grid on;
             pbaspect([1 1 1]);
+        end
+        
+        function viewErrorsMulti(rs)
+            
+            % Default variables
+%             if ~exist('singleUnitsToPlot', 'var')
+%                 singleUnitsToPlot = 1:rs.multi.n_re;
+%             end
+%             if ~exist('showMulti', 'var')
+%                 showMulti = true;
+%             end
+            
+            % Calculate errors if not done so far
+            if isempty(rs.results)
+                rs.results = ErrorEstimation(rs);
+            end
+            
+            % Open figure
+            figure('Name', 'Multistatic Tracking Error');
+
+            % Plot errors
+            plot(rs.results.multistatic');
+            grid on;
+            legend({'Cross Track', 'Along Track'});
+            xlabel('Measurement #', 'FontWeight', 'bold');
+            ylabel('Error [m]', 'FontWeight', 'bold');
+            
+        end
+        
+        function viewErrorsSingle(rs, unit)
+            
+            % Default variables
+            if ~exist('unit', 'var')
+                unit = 1;
+            end
+            
+            % Calculate errors if not done so far
+            if isempty(rs.results)
+                rs.results = ErrorEstimation(rs);
+            end
+            
+            % Open figure
+            figure('Name', sprintf('Unit %d Tracking Error', unit));
+
+            % Plot errors
+            plot(rs.results.single{unit}');
+            grid on;
+            legend({'Cross Track', 'Along Track'});
+            xlabel('Measurement #', 'FontWeight', 'bold');
+            ylabel('Error [m]', 'FontWeight', 'bold');
+            
         end
         
         function readOut(rs)

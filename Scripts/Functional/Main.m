@@ -131,8 +131,9 @@ viewTrackingMulti(scenario);
 %% Results Processing
 
 % Estimate error of results
-% scenario.results = ErrorEstimation(scenario);
+scenario.results = ErrorEstimation(scenario);
 
 % View plots of errors
-% viewErrors(scenario);
+% viewErrorsSingle(scenario);
+% viewErrorsMulti(scenario);
 

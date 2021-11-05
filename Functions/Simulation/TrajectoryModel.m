@@ -7,12 +7,12 @@ function [traj_out] = TrajectoryModel(traj_in)
 
 % Position function
 function currentPos = positionStatic(traj, time)
-    currentPos = traj.pos_st .* ones(size(time));
+    currentPos = traj.pos_st .* ones(1, length(time));
 end
 
 % Velocity function
 function currentVel = velocityStatic(traj, time)
-    currentVel = traj.vel_st .* ones(size(time));
+    currentVel = traj.vel_st .* ones(1, length(time));
 end
 
 %% Oscillating Model Trajectory Functions
@@ -20,17 +20,17 @@ end
 % Position function
 function currentPos = positionModel(traj, time)
     currentPos = ...
-        [traj.exc * sin(traj.per * time); ...
-        traj.yvel * time; ...
-        ones(size(time)) * traj.alt];
+        [traj.exc * sin(traj.per * time(:)'); ...
+        traj.yvel * time(:)'; ...
+        ones(1, length(time)) * traj.alt];
 end
 
 % Velocity function
 function currentVel = velocityModel(traj, time)
    currentVel = ...
-        [traj.per *traj.exc * cos(traj.per * time); ...
-        ones(size(time)) *traj.yvel; ...
-        zeros(size(time))];
+        [traj.per *traj.exc * cos(traj.per * time(:)'); ...
+        ones(1, length(time)) *traj.yvel; ...
+        zeros(1, length(time))];
 end
 
 %% Constant Velocity Oscillating Trajectory Functions
@@ -44,7 +44,7 @@ function currentPos = positionModelConstant(traj, time)
     a = traj.per;
     b = traj.exc;
     c = traj.yvel;
-    x = a * time * 2 / pi;
+    x = a * time(:)' * 2 / pi;
 %     phi = mod((x+1), 2) - 1;
     phi = mod(x + 1, 2) - 1;
     phi_int = x - phi;
@@ -53,7 +53,7 @@ function currentPos = positionModelConstant(traj, time)
     yPos = e * (sqrt(c*c - a*a*b*b) / a);
     
     
-    x_pos = a * sin(b * time);
+    x_pos = a * sin(b * time(:)');
     u = (c*c - a*a*b*b) / (a*a*b*b);
     pos = (a*b / 2) * (x_pos.*sqrt(u + x_pos.*x_pos) + u*log(sqrt(u+x_pos.*x_pos) + x_pos));
     yPos = yPos + pos;
@@ -62,31 +62,31 @@ function currentPos = positionModelConstant(traj, time)
 %         .* e ./ (a*sqrt(-a*a*b*b*cos(2*a*time) - a*a*b*b + 2*c*c));
     
     currentPos = ...
-        [traj.exc * sin(traj.per * time); ...
+        [traj.exc * sin(traj.per * time(:)'); ...
         yPos; ...
-        ones(size(time)) * traj.alt];
+        ones(1, length(time)) * traj.alt];
 end
 
 % Calculate velocity
 function currentVel = velocityModelConstant(traj, time)
     yvel_mod = sqrt(traj.yvel.^2 - ...
-        (traj.per * traj.exc * cos(traj.per * time)).^2);
+        (traj.per * traj.exc * cos(traj.per * time(:)')).^2);
     currentVel = ...
-        [traj.per * traj.exc * cos(traj.per * time); ...
-        ones(size(time)) .* yvel_mod; ...
-        zeros(size(time))];
+        [traj.per * traj.exc * cos(traj.per * time(:)'); ...
+        ones(1, length(time)) .* yvel_mod; ...
+        zeros(1, length(time))];
 end
 
 %% Linear Trajectory Functions
 
 % Calculate position
 function currentPos = positionLinear(traj, time)
-    currentPos = traj.pos_st + time.*traj.vel_st;
+    currentPos = traj.pos_st + time(:)'.*traj.vel_st;
 end
 
 % Calculate velocity
 function currentVel = velocityLinear(traj, time)
-    currentVel = traj.vel_st.*ones(size(time));
+    currentVel = traj.vel_st.*ones(1, length(time));
 end
 
 %% Model Trajectory

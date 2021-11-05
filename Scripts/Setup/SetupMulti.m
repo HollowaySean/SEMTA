@@ -19,9 +19,9 @@ nm = 1852;
 %% Multistatic Scenario Setup
 
 % Locations of radar units
-num_receivers = 6;                      % Number of radar units
+num_receivers = 2;                      % Number of radar units
 dist_from_center    = 5000;             % Cross-track distance from track to radar units
-unit_spacing        = 3000;             % Spacing between units
+unit_spacing        = 1500;             % Spacing between units
 spacing_offset      = -3000;            % Along-track offset of units
 
 radar_pos = ...

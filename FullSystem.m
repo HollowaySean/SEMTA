@@ -8,12 +8,10 @@
     This shell file runs successive scripts and gauges progress.
 
     TODO:
-        - Rewrite error estimation
         - Python web dashboard
         - Flask deployment server
             - Secret key
         - Modify parameters over web
-        - Live data decoding shell script
 %}
 
 %% Housekeeping, Timing, and Path Management
