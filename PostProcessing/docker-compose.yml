@@ -6,6 +6,7 @@ services:
     volumes:
       - ./Input:/app/Input
       - ./Output:/app/Output
+      - ./Instance:/app/Instance
     environment:
       FLASK_APP: Server.py
     ports:
