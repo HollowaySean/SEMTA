@@ -629,7 +629,7 @@ def ProcessFiles(foldername):
     # Save multistatic results
     with open(outputPath + '/multi.csv', mode='w', newline='') as csv_out:
         csvWriter = csv.writer(csv_out, delimiter=',', quotechar='"')
-        csvWriter.writerow(('Frame Number', 'Frame Time', 'Cross-Range Position', 'Down-Range Position'))
+        csvWriter.writerow(('Frame Number', 'Frame Time', 'Cross-Track Position', 'Along-Track Position'))
         csvWriter.writerows(positionEstimate)
 
     # Plot multistatic results
@@ -660,7 +660,7 @@ def ProcessFiles(foldername):
 
             # Write to CSV file
             csvWriter = csv.writer(csv_out, delimiter=',', quotechar='"')
-            csvWriter.writerow(('Frame Number', 'Frame Time', 'Cross-Range Position', 'Down-Range Position'))
+            csvWriter.writerow(('Frame Number', 'Frame Time', 'Cross-Track Position', 'Along-Track Position'))
             csvWriter.writerows(singleEstimate)
 
             # Plot single unit results
