@@ -10,7 +10,6 @@
     TODO:
         - Python web dashboard
         - Flask deployment server
-            - Secret key
         - Modify parameters over web
 %}
 

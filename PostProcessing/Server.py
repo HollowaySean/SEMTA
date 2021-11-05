@@ -13,10 +13,24 @@ uploadFolder = os.path.join(dir_path, 'Input')
 if not os.path.exists(uploadFolder):
     os.makedirs(uploadFolder)
 
+# Create instance folder if nonexistance
+if not os.path.exists(os.path.join(dir_path, 'Instance')):
+    os.makedirs(os.path.join(dir_path, 'Instance'))
+
+# Create secret key if not created
+configPath = os.path.join(dir_path, 'Instance', 'config')
+if not os.path.exists(configPath):
+    with open(configPath, 'w') as f:
+        secretKey = os.urandom(12).hex()
+        f.write(secretKey)
+else:
+    with open(configPath, 'r') as f:
+        secretKey = f.read()
+
 # Set up flask server
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = uploadFolder
-app.config['SECRET_KEY'] = 'test'
+app.config['SECRET_KEY'] = secretKey
 
 # HTTP POST handler
 @app.route('/', methods=['POST', 'GET'])
