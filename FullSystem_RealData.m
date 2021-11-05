@@ -6,14 +6,6 @@
     MATLAB Simulation & Processing
 
     This shell file runs successive scripts and gauges progress.
-
-    TODO:
-        - Rewrite error estimation
-        - Python web dashboard
-        - Flask deployment server
-            - Secret key
-        - Modify parameters over web
-        - Live data decoding shell script
 %}
 
 %% Housekeeping, Timing, and Path Management
@@ -31,22 +23,16 @@ scenario = RadarScenario;
 
 %% Setup Structures for Simulation
 
-% Set up simulation parameters
+% Set up simulation and processing parameters
 SetupSimulation
 
-% Set up target properties
-SetupTarget
-
-% Set up multistatic scenario
-SetupMulti
-
-% Set up transciever and channel parameters
-SetupRadarScenario
+% Set up real data input parameters
+SetupRealData
 
 %% Run Simulation
 
 % Perform main loop of simulation, signal and data processing
-Main
+Main_RealData
 
 %% Save Figures and Data
 
