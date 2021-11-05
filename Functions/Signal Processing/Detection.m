@@ -210,57 +210,53 @@ for n = 1:length(detection.combined_ind_list)
     lin_ind = detection.combined_ind_list(n);
     [r_ind, d_ind] = ind2sub(sz, lin_ind);
     
-    % Check index to the left
-    if (r_ind > 1) && (r_ind <= sz(1))
-        left_ind = sub2ind(sz, r_ind-1, d_ind);
-        left_list_ind = find(detection.combined_ind_list == left_ind);
-        left_label = label_list(left_list_ind);
-    else
-        left_list_ind = [];
+    % Initialize neighbor list
+    neighbor_labels = [];
+    neighbor_inds = [...
+         1, -1; ...
+         0, -1; ...
+        -1, -1; ...
+        -1,  0];
+    neighbor_inds = neighbor_inds + [r_ind, d_ind];
+    
+    % Check for out of bounds and convert to linear
+    for m = 1:4
+        
+        % Check for bounds
+        if (neighbor_inds(m,1) < 1) || (neighbor_inds(m,1) > sz(1)) || (neighbor_inds(m,2) < 1)
+            continue;
+        else
+            
+            % Get linear index
+            lin = sub2ind(sz, neighbor_inds(m,1), neighbor_inds(m,2));
+            
+            % Check if label has detection
+            list_ind = find(detection.combined_ind_list == lin, 1);
+            neighbor_labels = [neighbor_labels; label_list(list_ind)];
+        end
     end
     
-    % Check index above
-    if (d_ind > 1) && (d_ind <= sz(2))
-        up_ind = sub2ind(sz, r_ind, d_ind-1);
-        up_list_ind = find(detection.combined_ind_list == up_ind);
-        up_label = label_list(up_list_ind);
-    else
-        up_list_ind = [];
-    end
-    
-    % Condition 1: Left is true
-    if ~isempty(left_list_ind)
-        
-        % Use left label for CUT
-        label_list(n) = left_label;
-    end
-    
-    % Condition 2: Left and Up are true but different labels
-    if ~isempty(left_list_ind) && ~isempty(up_list_ind) && (left_label ~= up_label)
-        
-        % Merge Left and Up
-        label_list(n) = min(left_label, up_label);
-        
-        % Add equivalence
-        equiv_list{left_label}(end+1) = up_label;
-        equiv_list{up_label}(end+1) = left_label;
-        
-    end
-    
-    % Condition 3: Up is true and Left is not
-    if ~isempty(up_list_ind) && isempty(left_list_ind)
-        
-        % Use up label for CUT
-        label_list(n) = up_label;
-    end
-    
-    % Condition 4: Neither are true
-    if isempty(left_list_ind) && isempty(up_list_ind)
-        
-        % Add new label
+    % If no neighbors have detections, add new label
+    if isempty(neighbor_labels)
         new_label = length(equiv_list) + 1;
         equiv_list{new_label} = new_label;
         label_list(n) = new_label; 
+        continue;
+    end
+    
+    % If one detection, use that label for CUT
+    if length(neighbor_labels) == 1
+        label_list(n) = neighbor_labels;
+    
+    % If multiple detections, use lowest label and add equivalencies
+    else
+        
+        new_label = min(neighbor_labels);
+        label_list(n) = min(neighbor_labels);
+        
+        for k = 1:length(neighbor_labels)
+            equiv_list{neighbor_labels(k)}(end+1) = new_label;
+        end
     end
     
 end
@@ -373,5 +369,9 @@ for n = 1:length(regions)
     detection.detect_list.SNR(end+1) = 10*log10(max(regions(n).powerList, [], 'all')) ...
         - detection.noise_pow;
 end
+
+% Write to true/false detection value
+detection.detect_logical = detection.detect_list.num_detect > 0;
+
 
 end

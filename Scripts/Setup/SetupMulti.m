@@ -19,10 +19,10 @@ nm = 1852;
 %% Multistatic Scenario Setup
 
 % Locations of radar units
-num_receivers = 4;                      % Number of radar units
+num_receivers = 6;                      % Number of radar units
 dist_from_center    = 5000;             % Cross-track distance from track to radar units
-unit_spacing        = 1024;             % Spacing between units
-spacing_offset      = -1024;            % Along-track offset of units
+unit_spacing        = 3000;             % Spacing between units
+spacing_offset      = -3000;            % Along-track offset of units
 
 radar_pos = ...
     [-dist_from_center  * ones(1,num_receivers); ...     % Constant x location
@@ -31,7 +31,7 @@ radar_pos = ...
                           zeros(1,num_receivers)];       % Constant z elevation
                       
 % Timing setup
-simulation_time = 0.5;                   % Amount of time to simulate, in seconds
+simulation_time = 1;                   % Amount of time to simulate, in seconds
 timing_jitter = 0.0512;                    % Maximum random deviation between unit frame times
 
 % Multistatic properties

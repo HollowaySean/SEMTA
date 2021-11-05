@@ -66,7 +66,7 @@ scenario.radarsetup.tracking_single = tracking;
 %% Radar Mode Setup
 
 % Set initial mode
-scenario.radarsetup.initial_mode = 'search';
+scenario.radarsetup.initial_mode = 'ideal';
 scenario.flags.mode = scenario.radarsetup.initial_mode;
 
 % Wait mode properties
@@ -83,7 +83,7 @@ static_mode = struct( ...
 
 % Search mode properties
 search_mode = struct( ...
-    'init_angle',   15, ...             % Initial angle
+    'init_angle',   30, ...             % Initial angle
     'search_step',  -5, ...             % Angle delta per dwell, in degrees
     'search_max',   45, ...             % Maximum angle for search mode
     'int_type',     'binary', ...       % Integration type for search mode
