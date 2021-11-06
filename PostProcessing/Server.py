@@ -6,12 +6,14 @@ import dash
 from dash import html
 from dash import dcc
 from dash.dependencies import Input, Output
+from dash import dash_table
 import plotly.subplots as sp
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas
 import csv
 import os
+import json
 
 def StartServer():
 
@@ -121,14 +123,12 @@ def GenerateGraphDiv(foldername):
         df[idx+1] = pandas.read_csv(os.path.join(outputPath, filename)).round(2)
 
     # Define web page layout
-    return html.Div(id = 'parent', children = [
+    return [
         html.H1(id = 'H1', children = 'Tracking Results',\
             style = {'textAlign':'center','marginTop':40,'marginBottom':40}),
         html.H2(id = 'H2', children = 'Test Name: \"' + foldername + '\"',\
-            style = {'textAlign':'center','marginTop':40,'marginBottom':0})] +
-
-        [TrackingPlot(df, fr) for fr in range(len(df))]
-        )
+            style = {'textAlign':'center','marginTop':40,'marginBottom':0})] \
+        + [TrackingPlot(df, fr) for fr in range(len(df))]
 
 def TrackingPlot(dataFrame, frameNumber):
 
@@ -187,6 +187,70 @@ def GenerateDropdown():
         ],
         style={'width':'50%', 'textAlign':'center'})
 
+def GenerateParameterTable():
+
+    # Assemble file path
+    dirPath = os.path.dirname(os.path.realpath(__file__))
+    paramFile = os.path.join(dirPath, 'Instance', 'params.json')
+
+    # If file exists, read from file
+    if os.path.exists(paramFile):
+        with open(paramFile, 'r') as jsonFile:
+            paramsIn = json.load(jsonFile)
+    
+    # Make parameter list human readable
+    paramListReadable = {
+        'Maximum Target Speed [m/s]'            : paramsIn['max_vel'],
+        'Maximum Target Acceleration [m/s^2]'   : paramsIn['max_acc'],
+        'Fine Gating Threshold'                 : paramsIn['dist_thresh'],
+        'Cross-Track Motion Variance'           : paramsIn['sigma_v'][0],
+        'Along-Track Motion Variance'           : paramsIn['sigma_v'][1]
+    }
+
+    # Return HTML object
+    return html.Div(
+        children = [
+            dash_table.DataTable(
+                id='param-table',
+                columns=([
+                    {'id': 'parameter', 'name': 'Parameter'}, 
+                    {'id': 'value',     'name': 'Value'}]
+                ),
+                data=[{'parameter': key, 'value': paramListReadable[key]} \
+                    for key in paramListReadable.keys()],
+                editable=True
+            ),
+            html.Button('Re-Process Tracking', 
+                id='param-submit',
+                n_clicks=0
+            )
+        ],
+        style={'width':'50%'})
+
+def UpdateParameters(newParams):
+
+    try:
+        # Generate parameters in file format
+        paramsOut = {
+            'max_vel'       : float(newParams[0]['value']),
+            'max_acc'       : float(newParams[1]['value']),
+            'dist_thresh'   : float(newParams[2]['value']),
+            'sigma_v'       : [float(newParams[3]['value']), 
+                            float(newParams[4]['value'])]
+        }
+
+        # Assemble file path
+        dirPath = os.path.dirname(os.path.realpath(__file__))
+        paramFile = os.path.join(dirPath, 'Instance', 'params.json')
+
+        # Save new parameters to file
+        with open(paramFile, 'w') as jsonFile:
+            json.dump(paramsOut, jsonFile, indent=4)
+    
+    except(Exception):
+        print("Failed to update parameters.")
+
+
 # Main path
 if __name__ == "__main__":
     
@@ -201,21 +265,26 @@ if __name__ == "__main__":
     )
 
     # Draw graphs
-    graphDiv = GenerateGraphDiv('AsyncTracking')
-    dropdownDiv = GenerateDropdown()
     app.layout = html.Div([
-        dropdownDiv,
-        html.Div(id = 'graph-page', children = [
-            graphDiv
-        ])
+        html.Div(id = 'param-page', children = GenerateParameterTable()),
+        html.Div(id = 'dropdown-page', children = GenerateDropdown()),
+        html.Div(id = 'graph-page', children = GenerateGraphDiv('AsyncTracking'))
     ])
-
+    
+    # Set up parameter change callback
     @app.callback(
         Output('graph-page', 'children'),
+        Input('param-submit', 'n_clicks'),
+        Input('param-table', 'data'),
         Input('file-dropdown', 'value')
     )
-    def UpdatePlots(value):
+    def RefreshResults(n_clicks, data, value):
+        if n_clicks > RefreshResults.lastClick:
+            UpdateParameters(data)
+            Tracking.ProcessFiles(value)
+            RefreshResults.lastClick = n_clicks
         return GenerateGraphDiv(value)
-    
+    RefreshResults.lastClick = 0
+
     # Begin server
     app.run_server(port=5000, host='0.0.0.0', debug=True)
