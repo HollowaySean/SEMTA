@@ -1,34 +1,62 @@
 import dash
 from dash import html
 from dash import dcc
+import plotly.subplots as sp
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas
 import csv
+import os
 
-# with open('Output/AsyncTracking/multi.csv', newline='') as csvfile:
-#     multiReader = csv.reader(csvfile)
-#     multiData = list(multiReader)
+def startServer(foldername):
 
-# xData = [x[3] for x in multiData]
-# yData = [x[2] for x in multiData]
-df = pandas.read_csv('Output/AsyncTracking/multi.csv')
+    # Assemble file paths
+    dirPath = os.path.dirname(os.path.realpath(__file__))
+    outputPath = os.path.join(dirPath, 'Output', foldername)
 
-fig = px.scatter(df, y='Cross-Range Position', x='Down-Range Position', hover_data=['Frame Time'])
-fig.show()
+    # Get list of files
+    fileList = sorted(os.listdir(outputPath))
+    fileList = list(filter(lambda name: '.csv' in name, fileList))
+    fileList = list(filter(lambda name: name != 'multi.csv', fileList))
 
-# app = dash.Dash()
+    # Collect data from CSV files
+    df = [None]*(len(fileList) + 1)
+    df[0] = pandas.read_csv(os.path.join(outputPath, 'multi.csv')).round(2)
+    for idx, filename in enumerate(fileList):
+        df[idx+1] = pandas.read_csv(os.path.join(outputPath, filename)).round(2)
 
-# def multiPlot():
-#     fig = go.Figure([px.scatter(df, x='Cross-Range Position', y='Down-Range Position')])
-#     fig.update_layout(title = 'Multistatic Tracking Data')
-#     return fig
+    # Initialize Dash app
+    app = dash.Dash()
 
-# app.layout = html.Div(id = 'parent', children = [
-#     html.H1(id = 'H1', children = 'Multistatic Tracking Results',\
-#         style = {'textAlign':'center','marginTop':40,'marginBottom':40}),
-#     dcc.Graph(id = 'line_plot', figure = multiPlot())    
-#     ])
+    # Define web page layout
+    app.layout = html.Div(id = 'parent', children = [
+        html.H1(id = 'H1', children = 'Tracking Results',\
+            style = {'textAlign':'center','marginTop':40,'marginBottom':40}),
+        html.H2(id = 'H2', children = 'Test Name: \"' + foldername + '\"',\
+            style = {'textAlign':'center','marginTop':40,'marginBottom':0})] +
 
-# if __name__ == '__main__': 
-#     app.run_server()
+        [dcc.Graph(
+            id = 'line_plot0', 
+            figure = px.line(
+                df[0], 
+                title='Multistatic',
+                y='Cross-Track Position', 
+                x='Along-Track Position', 
+                hover_data=['Time']))] +
+
+        [dcc.Graph(
+            id = 'scatter_plot' + str(fr), 
+            figure = px.scatter(
+                df[fr], 
+                title='Unit ' + str(fr),
+                y='Cross-Track Position', 
+                x='Along-Track Position', 
+                hover_data=['Time']))\
+        for fr in range(1,len(df))]
+        )
+
+    # Begin server
+    app.run_server(debug=True)
+
+if __name__ == '__main__': 
+    startServer('AsyncTracking')
