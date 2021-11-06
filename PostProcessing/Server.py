@@ -5,6 +5,7 @@ import traceback
 import dash
 from dash import html
 from dash import dcc
+from dash.dependencies import Input, Output
 import plotly.subplots as sp
 import plotly.graph_objects as go
 import plotly.express as px
@@ -12,7 +13,7 @@ import pandas
 import csv
 import os
 
-def startServer():
+def StartServer():
 
     # Get local file path
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -102,7 +103,7 @@ def startServer():
 
     return app
 
-def drawGraphs(app, foldername):
+def GenerateGraphDiv(foldername):
 
     # Assemble file paths
     dirPath = os.path.dirname(os.path.realpath(__file__))
@@ -120,38 +121,77 @@ def drawGraphs(app, foldername):
         df[idx+1] = pandas.read_csv(os.path.join(outputPath, filename)).round(2)
 
     # Define web page layout
-    app.layout = html.Div(id = 'parent', children = [
+    return html.Div(id = 'parent', children = [
         html.H1(id = 'H1', children = 'Tracking Results',\
             style = {'textAlign':'center','marginTop':40,'marginBottom':40}),
         html.H2(id = 'H2', children = 'Test Name: \"' + foldername + '\"',\
             style = {'textAlign':'center','marginTop':40,'marginBottom':0})] +
 
-        [dcc.Graph(
+        [TrackingPlot(df, fr) for fr in range(len(df))]
+        )
+
+def TrackingPlot(dataFrame, frameNumber):
+
+    # Set plot config options
+    graphConfig = dict({
+        'displaylogo'   : False,
+        'scrollZoom'    : True
+    })
+
+    # Return graph object
+    if frameNumber == 0:
+        return dcc.Graph(
             id = 'line_plot0', 
             figure = px.line(
-                df[0], 
+                dataFrame[0], 
                 title='Multistatic',
                 y='Cross-Track Position', 
                 x='Along-Track Position', 
-                hover_data=['Time']))] +
-
-        [dcc.Graph(
-            id = 'scatter_plot' + str(fr), 
+                hover_data=['Time']),
+            config={**graphConfig, **dict({'toImageButtonOptions':{'filename':'multistatic'}})})
+    else:
+        return dcc.Graph(
+            id = 'scatter_plot' + str(frameNumber), 
             figure = px.scatter(
-                df[fr], 
-                title='Unit ' + str(fr),
+                dataFrame[frameNumber], 
+                title='Unit ' + str(frameNumber),
                 y='Cross-Track Position', 
                 x='Along-Track Position', 
-                hover_data=['Time']))\
-        for fr in range(1,len(df))]
-        )
+                hover_data=['Time']),
+            config={**graphConfig, **dict({'toImageButtonOptions':{'filename':'unit' + str(frameNumber)}})})
+
+def GenerateDropdown():
+
+    # Assemble file paths
+    dirPath = os.path.dirname(os.path.realpath(__file__))
+    outputPath = os.path.join(dirPath, 'Output')
+    folderList = sorted(os.listdir(outputPath))
+
+    # Sort by most recent timestamp
+    folderList.sort(
+        key=lambda name: os.path.getmtime(os.path.join(outputPath, name)),
+        reverse=True
+    )
+
+    # Generate dropdown
+    return html.Div(
+        children=[
+            dcc.Dropdown(
+                id='file-dropdown',
+                options=[
+                    {'label': folder, 'value': folder}\
+                    for folder in folderList
+                ],
+                value=folderList[0]
+            )
+        ],
+        style={'width':'50%', 'textAlign':'center'})
 
 # Main path
 if __name__ == "__main__":
     
     # Start flask server
-    flaskServer = startServer()
-    # flaskServer.run(host='0.0.0.0')
+    flaskServer = StartServer()
 
     # Initialize Dash app
     app = dash.Dash(
@@ -161,7 +201,21 @@ if __name__ == "__main__":
     )
 
     # Draw graphs
-    drawGraphs(app, 'AsyncTracking')
+    graphDiv = GenerateGraphDiv('AsyncTracking')
+    dropdownDiv = GenerateDropdown()
+    app.layout = html.Div([
+        dropdownDiv,
+        html.Div(id = 'graph-page', children = [
+            graphDiv
+        ])
+    ])
+
+    @app.callback(
+        Output('graph-page', 'children'),
+        Input('file-dropdown', 'value')
+    )
+    def UpdatePlots(value):
+        return GenerateGraphDiv(value)
     
     # Begin server
     app.run_server(port=5000, host='0.0.0.0', debug=True)
