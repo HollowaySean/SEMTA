@@ -323,6 +323,7 @@ def DataFusion(trackSingleIn):
         meas_estimate    = [None]*numFr,
         meas_prediction  = [None]*numFr,
         time             = [None]*numFr,
+        unit             = [None]*numFr,
         numFr            = numFr
     )
 
@@ -360,6 +361,7 @@ def DataFusion(trackSingleIn):
             covar       = newCovar,
             time        = deTime)
         trackingMulti['time'][de] = deTime
+        trackingMulti['unit'][de] = deUnit
 
     # Return data structure
     return trackingMulti
@@ -623,13 +625,17 @@ def ProcessFiles(foldername):
     # Generate result matrix
     stateEstimate = [None]*numFr
     for fr in range(numFr):
-        stateEstimate[fr] = [fr+1] + [trackingMulti['time'][fr]] + [float(el) for el in trackingMulti['estimate'][fr]['pos']]
+        stateEstimate[fr] = \
+            [fr+1] \
+            + [trackingMulti['unit'][fr]+1] \
+            + [trackingMulti['time'][fr]] \
+            + [float(el) for el in trackingMulti['estimate'][fr]['pos']]
 
 
     # Save multistatic results
     with open(outputPath + '/multi.csv', mode='w', newline='') as csv_out:
         csvWriter = csv.writer(csv_out, delimiter=',', quotechar='"')
-        csvWriter.writerow(('Measurement Number', 'Time', 'Cross-Track Position', 'Along-Track Position'))
+        csvWriter.writerow(('Measurement Number', 'Origin Unit', 'Time', 'Cross-Track Position', 'Along-Track Position'))
         csvWriter.writerows(stateEstimate)
 
     # Plot multistatic results
@@ -673,3 +679,17 @@ def ProcessFiles(foldername):
             plt.ylim(ylims)
             plt.savefig(os.path.join(outputPath, filenameList[rx] + '.png'))
             plt.close()
+
+
+# Main method
+if __name__ == '__main__':
+    
+    # Gather input path
+    dirPath = os.path.dirname(os.path.realpath(__file__))
+    inputPath = os.path.join(dirPath, 'Input')
+
+    # Process all files
+    for folder in os.listdir(inputPath):
+        ProcessFiles(folder)
+
+    

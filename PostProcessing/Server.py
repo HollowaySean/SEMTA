@@ -15,9 +15,6 @@ import csv
 import os
 import json
 
-# TO DO:
-#   Unit origin of measurements
-
 def StartServer():
 
     # Get local file path
@@ -147,15 +144,56 @@ def TrackingPlot(dataFrame, frameNumber):
 
     # Return graph object
     if frameNumber == 0:
-        return dcc.Graph(
-            id = 'line_plot0', 
-            figure = px.line(
+
+        # Get start/end labels for units
+        unitList = dataFrame[0]['Origin Unit']
+        textList = ['']*len(unitList)
+        for unit in unitList.unique():
+            startInd = unitList[unitList == unit].index[0]
+            stopInd  = unitList[unitList == unit].index[-1]
+            textList[startInd] += 'Unit ' + str(unit) + ' start\n'
+            textList[stopInd]  += 'Unit ' + str(unit) + ' stop\n' 
+        dataFrame[0]['Text'] = textList
+
+        # Get discrete color output
+        colorList = [str(unit) for unit in dataFrame[0]['Origin Unit']]
+        dataFrame[0]['Unit'] = colorList
+
+        sc = go.Figure(px.scatter(
+            dataFrame[0], 
+            title='Multistatic w/ Unit Labels',
+            y='Cross-Track Position', 
+            x='Along-Track Position', 
+            color='Unit',
+            hover_data=['Time', 'Origin Unit', 'Text']
+        ))
+        sc.add_trace(go.Scatter(
+            y=dataFrame[0]['Cross-Track Position'],
+            x=dataFrame[0]['Along-Track Position'],
+            line_color='#0000FF',
+            name='Combined',
+            visible='legendonly'
+        ))
+
+        li = go.Figure(
+            px.line(
                 dataFrame[0], 
                 title='Multistatic',
                 y='Cross-Track Position', 
                 x='Along-Track Position', 
-                hover_data=['Time']),
-            config={**graphConfig, **dict({'toImageButtonOptions':{'filename':'multistatic'}})})
+                hover_data=['Time', 'Origin Unit', 'Text']
+        ))
+
+        return html.Div(children=[
+            dcc.Graph(
+                id = 'line_plot0',
+                figure = li,
+                config={**graphConfig, **dict({'toImageButtonOptions':{'filename':'multistatic'}})}),
+            dcc.Graph(
+                id = 'scatter_plot0', 
+                figure = sc,
+                config={**graphConfig, **dict({'toImageButtonOptions':{'filename':'multistatic_labeled'}})})
+            ])
     else:
         return dcc.Graph(
             id = 'scatter_plot' + str(frameNumber), 
@@ -342,4 +380,4 @@ if __name__ == "__main__":
     SetupCallbacks(app)
 
     # Begin server
-    app.run_server(port=5000, host='0.0.0.0', debug=True)
+    app.run_server(port=5000, host='0.0.0.0', debug=False)
