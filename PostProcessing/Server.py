@@ -16,7 +16,6 @@ import os
 import json
 
 # TO DO:
-#   Proper formatting for dashboard
 #   Unit origin of measurements
 
 def StartServer():
@@ -133,9 +132,9 @@ def GenerateGraphDiv(foldername):
     # Define web page layout
     return [
         html.H1(id = 'H1', children = 'Tracking Results',\
-            style = {'textAlign':'center','marginTop':40,'marginBottom':40}),
+            style = {'textAlign':'center','marginTop':40,'marginBottom':40, 'font-family':'sans-serif'}),
         html.H2(id = 'H2', children = 'Test Name: \"' + foldername + '\"',\
-            style = {'textAlign':'center','marginTop':40,'marginBottom':0})] \
+            style = {'textAlign':'center','marginTop':40,'marginBottom':0, 'font-family':'sans-serif'})] \
         + [TrackingPlot(df, fr) for fr in range(len(df))]
 
 def TrackingPlot(dataFrame, frameNumber):
@@ -190,16 +189,26 @@ def GenerateDropdown():
     # Generate dropdown
     return html.Div(
         children=[
+            html.H3(children='Choose Test Data:', style={'font-family':'sans-serif'}),
             dcc.Dropdown(
                 id='file-dropdown',
                 options=[
                     {'label': folder, 'value': folder}\
                     for folder in folderList
                 ],
-                value=defaultValue
+                value=defaultValue, 
+                style={'font-family':'sans-serif'}
             )
         ],
-        style={'width':'50%', 'textAlign':'center'})
+        style={
+            'width'             : '400px', 
+            'margin'            : 'auto', 
+            'display'           : 'flex', 
+            'flex-direction'    : 'column', 
+            'text-align'        : 'center',
+            'margin-bottom'     : '40px',
+            'margin-top'        : '20px'
+        })
 
 def GenerateParameterTable():
 
@@ -224,6 +233,7 @@ def GenerateParameterTable():
     # Return HTML object
     return html.Div(
         children = [
+            html.H3(children='Set Tracking Parameters', style={'font-family':'sans-serif'}),
             dash_table.DataTable(
                 id='param-table',
                 columns=([
@@ -232,14 +242,24 @@ def GenerateParameterTable():
                 ),
                 data=[{'parameter': key, 'value': paramListReadable[key]} \
                     for key in paramListReadable.keys()],
-                editable=True
+                editable=True,
+                style_cell={'textAlign' : 'center'}
             ),
             html.Button('Re-Process Tracking', 
                 id='param-submit',
-                n_clicks=0
+                n_clicks=0,
+                style={'height': '30px'}
             )
         ],
-        style={'width':'50%'})
+        style={
+            'width'             : '400px', 
+            'margin'            : 'auto', 
+            'display'           : 'flex', 
+            'flex-direction'    : 'column', 
+            'text-align'        : 'center',
+            'margin-bottom'     : '40px',
+            'margin-top'        : '20px'
+        })
 
 def UpdateParameters(newParams):
 
@@ -268,8 +288,17 @@ def GenerateMainPage():
 
     # Draw all components
     layout = html.Div(id = 'document', children=[
-        html.Div(id = 'param-page', children = GenerateParameterTable()),
-        html.Div(id = 'dropdown-page', children = GenerateDropdown()),
+        html.Div(id = 'top-div', children=[
+            html.Div(id = 'param-page', children = GenerateParameterTable()),
+            html.Div(id = 'dropdown-page', children = GenerateDropdown())
+        ],
+        style={
+            'display'   : 'flex',
+            'flex-direction'    : 'row',
+            'justify-content'   : 'space-around',
+            'margin'            : 'auto'
+        }
+        ),
         html.Div(id = 'graph-page', children = GenerateGraphDiv(''))
     ])
     return layout
