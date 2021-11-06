@@ -15,6 +15,10 @@ import csv
 import os
 import json
 
+# TO DO:
+#   Proper formatting for dashboard
+#   Unit origin of measurements
+
 def StartServer():
 
     # Get local file path
@@ -107,6 +111,10 @@ def StartServer():
 
 def GenerateGraphDiv(foldername):
 
+    # Check if no files exist
+    if not foldername:
+        return html.P(id = 'placeholder', children='File not found on server.')
+
     # Assemble file paths
     dirPath = os.path.dirname(os.path.realpath(__file__))
     outputPath = os.path.join(dirPath, 'Output', foldername)
@@ -167,6 +175,12 @@ def GenerateDropdown():
     outputPath = os.path.join(dirPath, 'Output')
     folderList = sorted(os.listdir(outputPath))
 
+    # Generate default value
+    if folderList:
+        defaultValue = folderList[0]
+    else:
+        defaultValue = ''
+
     # Sort by most recent timestamp
     folderList.sort(
         key=lambda name: os.path.getmtime(os.path.join(outputPath, name)),
@@ -182,7 +196,7 @@ def GenerateDropdown():
                     {'label': folder, 'value': folder}\
                     for folder in folderList
                 ],
-                value=folderList[0]
+                value=defaultValue
             )
         ],
         style={'width':'50%', 'textAlign':'center'})
@@ -250,6 +264,34 @@ def UpdateParameters(newParams):
     except(Exception):
         print("Failed to update parameters.")
 
+def GenerateMainPage():
+
+    # Draw all components
+    layout = html.Div(id = 'document', children=[
+        html.Div(id = 'param-page', children = GenerateParameterTable()),
+        html.Div(id = 'dropdown-page', children = GenerateDropdown()),
+        html.Div(id = 'graph-page', children = GenerateGraphDiv(''))
+    ])
+    return layout
+
+def SetupCallbacks(app):
+
+    # Set up parameter change callback
+    @app.callback(
+        Output('graph-page', 'children'),
+        Input('param-submit', 'n_clicks'),
+        Input('param-table', 'data'),
+        Input('file-dropdown', 'value')
+    )
+    def RefreshResults(n_clicks, data, value):
+        if n_clicks > RefreshResults.lastClick:
+            UpdateParameters(data)
+            RefreshResults.lastClick = n_clicks
+            if value:
+                Tracking.ProcessFiles(value)
+        return GenerateGraphDiv(value)
+    RefreshResults.lastClick = 0
+
 
 # Main path
 if __name__ == "__main__":
@@ -263,28 +305,12 @@ if __name__ == "__main__":
         url_base_pathname='/dashboard/',
         title='SEMTA Results Viewer'
     )
-
-    # Draw graphs
-    app.layout = html.Div([
-        html.Div(id = 'param-page', children = GenerateParameterTable()),
-        html.Div(id = 'dropdown-page', children = GenerateDropdown()),
-        html.Div(id = 'graph-page', children = GenerateGraphDiv('AsyncTracking'))
-    ])
     
-    # Set up parameter change callback
-    @app.callback(
-        Output('graph-page', 'children'),
-        Input('param-submit', 'n_clicks'),
-        Input('param-table', 'data'),
-        Input('file-dropdown', 'value')
-    )
-    def RefreshResults(n_clicks, data, value):
-        if n_clicks > RefreshResults.lastClick:
-            UpdateParameters(data)
-            Tracking.ProcessFiles(value)
-            RefreshResults.lastClick = n_clicks
-        return GenerateGraphDiv(value)
-    RefreshResults.lastClick = 0
+    # Add main page to layout
+    app.layout = GenerateMainPage
+
+    # Initialize callback functions
+    SetupCallbacks(app)
 
     # Begin server
     app.run_server(port=5000, host='0.0.0.0', debug=True)

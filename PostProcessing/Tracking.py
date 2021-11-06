@@ -621,19 +621,19 @@ def ProcessFiles(foldername):
         os.makedirs(outputPath)
     
     # Generate result matrix
-    positionEstimate = [None]*numFr
+    stateEstimate = [None]*numFr
     for fr in range(numFr):
-        positionEstimate[fr] = [fr+1] + [trackingMulti['time'][fr]] + [float(el) for el in trackingMulti['estimate'][fr]['pos']]
+        stateEstimate[fr] = [fr+1] + [trackingMulti['time'][fr]] + [float(el) for el in trackingMulti['estimate'][fr]['pos']]
 
 
     # Save multistatic results
     with open(outputPath + '/multi.csv', mode='w', newline='') as csv_out:
         csvWriter = csv.writer(csv_out, delimiter=',', quotechar='"')
         csvWriter.writerow(('Measurement Number', 'Time', 'Cross-Track Position', 'Along-Track Position'))
-        csvWriter.writerows(positionEstimate)
+        csvWriter.writerows(stateEstimate)
 
     # Plot multistatic results
-    data = np.array(positionEstimate)
+    data = np.array(stateEstimate)
     xs = data[:,3]
     ys = data[:,2]
     xlims = (np.min(xs), np.max(xs))
@@ -675,4 +675,4 @@ def ProcessFiles(foldername):
             plt.close()
 
 if __name__ == '__main__':
-    ProcessFiles('LiveServerTest_110421_2246')
+    ProcessFiles('LiveServerTest_110421_2310')

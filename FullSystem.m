@@ -6,11 +6,6 @@
     MATLAB Simulation & Processing
 
     This shell file runs successive scripts and gauges progress.
-
-    TODO:
-        - Python web dashboard
-        - Flask deployment server
-        - Modify parameters over web
 %}
 
 %% Housekeeping, Timing, and Path Management
