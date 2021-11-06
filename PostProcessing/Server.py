@@ -2,93 +2,166 @@ import Tracking
 from flask import Flask, request, flash
 import os
 import traceback
+import dash
+from dash import html
+from dash import dcc
+import plotly.subplots as sp
+import plotly.graph_objects as go
+import plotly.express as px
+import pandas
+import csv
+import os
 
-# Get local file path
-dir_path = os.path.dirname(os.path.realpath(__file__))
+def startServer():
 
-# Setting variables
-uploadFolder = os.path.join(dir_path, 'Input')
+    # Get local file path
+    dir_path = os.path.dirname(os.path.realpath(__file__))
 
-# Create directory if nonexistent
-if not os.path.exists(uploadFolder):
-    os.makedirs(uploadFolder)
+    # Setting variables
+    uploadFolder = os.path.join(dir_path, 'Input')
 
-# Create instance folder if nonexistance
-if not os.path.exists(os.path.join(dir_path, 'Instance')):
-    os.makedirs(os.path.join(dir_path, 'Instance'))
+    # Create directory if nonexistent
+    if not os.path.exists(uploadFolder):
+        os.makedirs(uploadFolder)
 
-# Create secret key if not created
-configPath = os.path.join(dir_path, 'Instance', 'config')
-if not os.path.exists(configPath):
-    with open(configPath, 'w') as f:
-        secretKey = os.urandom(12).hex()
-        f.write(secretKey)
-else:
-    with open(configPath, 'r') as f:
-        secretKey = f.read()
+    # Create instance folder if nonexistance
+    if not os.path.exists(os.path.join(dir_path, 'Instance')):
+        os.makedirs(os.path.join(dir_path, 'Instance'))
 
-# Set up flask server
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = uploadFolder
-app.config['SECRET_KEY'] = secretKey
+    # Create secret key if not created
+    configPath = os.path.join(dir_path, 'Instance', 'config')
+    if not os.path.exists(configPath):
+        with open(configPath, 'w') as f:
+            secretKey = os.urandom(12).hex()
+            f.write(secretKey)
+    else:
+        with open(configPath, 'r') as f:
+            secretKey = f.read()
 
-# HTTP POST handler
-@app.route('/', methods=['POST', 'GET'])
-def uploadFile():
-    
-    # GET test response
-    if request.method == 'GET':
-        return 'Successfully pinged server.', 200
+    # Set up flask server
+    app = Flask(__name__)
+    app.config['UPLOAD_FOLDER'] = uploadFolder
+    app.config['SECRET_KEY'] = secretKey
 
-    # POST route to accept 
-    elif request.method == 'POST':
+    # HTTP route handler
+    @app.route('/', methods=['POST', 'GET'])
+    def uploadFile():
         
-        # Check if POST request has file attached
-        if 'file' not in request.files:
-            return 'ERROR: No file attached.', 400
-        
-        # Get file
-        file = request.files['file']
+        # GET test response
+        if request.method == 'GET':
+            return 'Successfully pinged server.', 200
 
-        # Check for empty username
-        if file.filename == '':
-            return 'ERROR: No file attached.', 400
+        # POST route to accept 
+        elif request.method == 'POST':
+            
+            # Check if POST request has file attached
+            if 'file' not in request.files:
+                return 'ERROR: No file attached.', 400
+            
+            # Get file
+            file = request.files['file']
 
-        # Check if test ID is included in form
-        if 'test_id' not in request.form:
-            return 'ERROR: Test identifier not specified', 400
+            # Check for empty username
+            if file.filename == '':
+                return 'ERROR: No file attached.', 400
 
-        # Get test ID
-        testID = request.form['test_id']
+            # Check if test ID is included in form
+            if 'test_id' not in request.form:
+                return 'ERROR: Test identifier not specified', 400
 
-        # Check for file overwrite
-        folderpath = os.path.join(app.config['UPLOAD_FOLDER'], str(testID))
-        filepath = os.path.join(folderpath, file.filename)
-        if os.path.exists(filepath):
-            return 'ERROR: File already exists with that name.', 403
+            # Get test ID
+            testID = request.form['test_id']
 
-        # Chcek if directory exists for test ID, and create if not
-        if not os.path.exists(folderpath):
-            os.makedirs(folderpath)
+            # Check for file overwrite
+            folderpath = os.path.join(app.config['UPLOAD_FOLDER'], str(testID))
+            filepath = os.path.join(folderpath, file.filename)
+            if os.path.exists(filepath):
+                return 'ERROR: File already exists with that name.', 403
 
-        # Otherwise save to file
-        file.save(filepath)
+            # Chcek if directory exists for test ID, and create if not
+            if not os.path.exists(folderpath):
+                os.makedirs(folderpath)
 
-        try:
-            Tracking.ProcessFiles(str(testID))
-        except Exception as e:
-            # Remove failed file
-            os.remove(filepath)
+            # Otherwise save to file
+            file.save(filepath)
 
-            # Save error message
-            errorMsg = traceback.format_exc()
-            outputMsg =  (
-            'ERROR: Upload accepted but could not process file.\n'
-            'See Python error traceback below:\n\n')
-            return outputMsg + errorMsg, 500
+            try:
+                Tracking.ProcessFiles(str(testID))
+            except Exception as e:
+                # Remove failed file
+                os.remove(filepath)
 
-        return 'File successfully processed!', 201
+                # Save error message
+                errorMsg = traceback.format_exc()
+                outputMsg =  (
+                'ERROR: Upload accepted but could not process file.\n'
+                'See Python error traceback below:\n\n')
+                return outputMsg + errorMsg, 500
+
+            return 'File successfully processed!', 201
+
+    return app
+
+def drawGraphs(app, foldername):
+
+    # Assemble file paths
+    dirPath = os.path.dirname(os.path.realpath(__file__))
+    outputPath = os.path.join(dirPath, 'Output', foldername)
+
+    # Get list of files
+    fileList = sorted(os.listdir(outputPath))
+    fileList = list(filter(lambda name: '.csv' in name, fileList))
+    fileList = list(filter(lambda name: name != 'multi.csv', fileList))
+
+    # Collect data from CSV files
+    df = [None]*(len(fileList) + 1)
+    df[0] = pandas.read_csv(os.path.join(outputPath, 'multi.csv')).round(2)
+    for idx, filename in enumerate(fileList):
+        df[idx+1] = pandas.read_csv(os.path.join(outputPath, filename)).round(2)
+
+    # Define web page layout
+    app.layout = html.Div(id = 'parent', children = [
+        html.H1(id = 'H1', children = 'Tracking Results',\
+            style = {'textAlign':'center','marginTop':40,'marginBottom':40}),
+        html.H2(id = 'H2', children = 'Test Name: \"' + foldername + '\"',\
+            style = {'textAlign':'center','marginTop':40,'marginBottom':0})] +
+
+        [dcc.Graph(
+            id = 'line_plot0', 
+            figure = px.line(
+                df[0], 
+                title='Multistatic',
+                y='Cross-Track Position', 
+                x='Along-Track Position', 
+                hover_data=['Time']))] +
+
+        [dcc.Graph(
+            id = 'scatter_plot' + str(fr), 
+            figure = px.scatter(
+                df[fr], 
+                title='Unit ' + str(fr),
+                y='Cross-Track Position', 
+                x='Along-Track Position', 
+                hover_data=['Time']))\
+        for fr in range(1,len(df))]
+        )
 
 # Main path
 if __name__ == "__main__":
-    app.run(host='0.0.0.0')
+    
+    # Start flask server
+    flaskServer = startServer()
+    # flaskServer.run(host='0.0.0.0')
+
+    # Initialize Dash app
+    app = dash.Dash(
+        server=flaskServer,
+        url_base_pathname='/dashboard/',
+        title='SEMTA Results Viewer'
+    )
+
+    # Draw graphs
+    drawGraphs(app, 'AsyncTracking')
+    
+    # Begin server
+    app.run_server(port=5000, host='0.0.0.0', debug=True)

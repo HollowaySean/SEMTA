@@ -8,7 +8,7 @@ import pandas
 import csv
 import os
 
-def startServer(foldername):
+def drawGraphs(app, foldername):
 
     # Assemble file paths
     dirPath = os.path.dirname(os.path.realpath(__file__))
@@ -24,9 +24,6 @@ def startServer(foldername):
     df[0] = pandas.read_csv(os.path.join(outputPath, 'multi.csv')).round(2)
     for idx, filename in enumerate(fileList):
         df[idx+1] = pandas.read_csv(os.path.join(outputPath, filename)).round(2)
-
-    # Initialize Dash app
-    app = dash.Dash()
 
     # Define web page layout
     app.layout = html.Div(id = 'parent', children = [
@@ -55,8 +52,16 @@ def startServer(foldername):
         for fr in range(1,len(df))]
         )
 
-    # Begin server
-    app.run_server(debug=True)
-
 if __name__ == '__main__': 
-    startServer('AsyncTracking')
+
+    # Initialize Dash app
+    app = dash.Dash(
+        url_base_pathname='/dash/',
+        title='SEMTA Results Viewer'
+    )
+
+    # Draw graphs
+    drawGraphs(app, 'AsyncTracking')
+    
+    # Begin server
+    app.run_server(port=5000, host='0.0.0.0', debug=True)
