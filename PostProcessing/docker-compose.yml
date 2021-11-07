@@ -4,9 +4,9 @@ services:
     build: .
     container_name: semta_server
     volumes:
-      - ./Input:/app/Input
-      - ./Output:/app/Output
-      - ./Instance:/app/Instance
+      - ./Input:/usr/src/app/Input
+      - ./Output:/usr/src/app/Output
+      - ./Instance:/usr/src/app/Instance
     environment:
       FLASK_APP: Server.py
     ports:

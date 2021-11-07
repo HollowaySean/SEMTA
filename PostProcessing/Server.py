@@ -258,6 +258,8 @@ def GenerateParameterTable():
     if os.path.exists(paramFile):
         with open(paramFile, 'r') as jsonFile:
             paramsIn = json.load(jsonFile)
+    else:
+        paramsIn = Tracking.SetupParameters(os.path.join(dirPath, 'Instance'))
     
     # Make parameter list human readable
     paramListReadable = {
