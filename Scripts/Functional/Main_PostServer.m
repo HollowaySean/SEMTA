@@ -38,8 +38,13 @@ for unit = 1:scenario.multi.n_re
         scenario.multi.steering_angle{unit}(end+1) = BeamsteeringUpdate(scenario, true);
         
         % Skip expensive simulation and processing if SNR is too low
-        scenario.cube = SimulateAxes(scenario);
-        [~, detectionPossible] = CalculateSNR(scenario, true, true, true);
+        if scenario.simsetup.fast_simulation
+            scenario.cube = SimulateAxes(scenario);
+            [~, detectionPossible] = CalculateSNR(scenario, true, true, true);
+        else
+            detectionPossible = true;
+        end
+        
         if detectionPossible
         
             %% Radar Simulation (Single frame)

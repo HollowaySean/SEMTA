@@ -37,20 +37,43 @@ for unit = 1:scenario.multi.n_re
         % Set beam steering direction
         scenario.multi.steering_angle{unit}(end+1) = BeamsteeringUpdate(scenario, true);
         
-        %% Radar Simulation (Single frame)
+        % Skip expensive simulation and processing if SNR is too low
+        if scenario.simsetup.fast_simulation
+            scenario.cube = SimulateAxes(scenario);
+            [~, detectionPossible] = CalculateSNR(scenario, true, true, true);
+        else
+            detectionPossible = true;
+        end
         
-        % Run simulation to retrieve fast time x slow time Rx signal
-        scenario = RadarSimulation(scenario);
+        if detectionPossible
         
-        %% Signal Processing (Single frame)
+            %% Radar Simulation (Single frame)
+            
+            % Run simulation to retrieve fast time x slow time Rx signal
+            scenario = RadarSimulation(scenario);
+            
+            %% Signal Processing (Single frame)
+            
+            % Perform signal processing on received signal
+            scenario.cube = SignalProcessing(scenario);
+            
+            %% Data Processing (Single frame)
+            
+            % Perform radar detection
+            scenario.detection = Detection(scenario);
         
-        % Perform signal processing on received signal
-        scenario.cube = SignalProcessing(scenario);
-        
-        %% Data Processing (Single frame)
-        
-        % Perform radar detection
-        scenario.detection = Detection(scenario);
+        else
+            
+            % Read out
+            fprintf('Skipping frame %d simulation.\n\n', scenario.flags.frame);
+            
+            % Add dummy result otherwise
+            scenario.detection = struct(...
+                'detect_logical',   false, ...
+                'detect_list',      struct( ...
+                'num_detect',       0, ...
+                'time',             scenario.flags.frameMidTime));
+        end
         
         % Perform single unit tracking
         scenario = Tracking_SingleUnit(scenario);
