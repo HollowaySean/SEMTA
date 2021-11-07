@@ -512,7 +512,6 @@ def SetupParameters(instanceFolder):
     defaultParams = dict(
         max_vel = 250,
         max_acc = 1,
-        dist_thresh = 13.8,
         sigma_v = (0.09, 0)
     )
 

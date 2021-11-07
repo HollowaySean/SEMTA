@@ -212,17 +212,17 @@ def GenerateDropdown():
     outputPath = os.path.join(dirPath, 'Output')
     folderList = sorted(os.listdir(outputPath))
 
-    # Generate default value
-    if folderList:
-        defaultValue = folderList[0]
-    else:
-        defaultValue = ''
-
     # Sort by most recent timestamp
     folderList.sort(
         key=lambda name: os.path.getmtime(os.path.join(outputPath, name)),
         reverse=True
     )
+
+    # Generate default value
+    if folderList:
+        defaultValue = folderList[0]
+    else:
+        defaultValue = ''
 
     # Generate dropdown
     return html.Div(
@@ -263,7 +263,6 @@ def GenerateParameterTable():
     paramListReadable = {
         'Maximum Target Speed [m/s]'            : paramsIn['max_vel'],
         'Maximum Target Acceleration [m/s^2]'   : paramsIn['max_acc'],
-        'Fine Gating Threshold'                 : paramsIn['dist_thresh'],
         'Cross-Track Motion Variance'           : paramsIn['sigma_v'][0],
         'Along-Track Motion Variance'           : paramsIn['sigma_v'][1]
     }
@@ -306,9 +305,8 @@ def UpdateParameters(newParams):
         paramsOut = {
             'max_vel'       : float(newParams[0]['value']),
             'max_acc'       : float(newParams[1]['value']),
-            'dist_thresh'   : float(newParams[2]['value']),
-            'sigma_v'       : [float(newParams[3]['value']), 
-                            float(newParams[4]['value'])]
+            'sigma_v'       : [float(newParams[2]['value']), 
+                            float(newParams[3]['value'])]
         }
 
         # Assemble file path
