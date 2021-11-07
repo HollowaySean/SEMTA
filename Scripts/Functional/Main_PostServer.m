@@ -30,27 +30,45 @@ for unit = 1:scenario.multi.n_re
     while scenario.flags.frameStartTime < scenario.multi.sim_time
         
         % Set current frame flag
-        scenario.flags.frame = scenario.flags.frame + 1;
+        scenario.flags.frame = scenario.flags.frame + 1;            
         
         %% Beam Steering Setup
         
         % Set beam steering direction
         scenario.multi.steering_angle{unit}(end+1) = BeamsteeringUpdate(scenario, true);
         
-        %% Radar Simulation (Single frame)
+        % Skip expensive simulation and processing if SNR is too low
+        scenario.cube = SimulateAxes(scenario);
+        [~, detectionPossible] = CalculateSNR(scenario, true, true, true);
+        if detectionPossible
         
-        % Run simulation to retrieve fast time x slow time Rx signal
-        scenario = RadarSimulation(scenario);
+            %% Radar Simulation (Single frame)
+            
+            % Run simulation to retrieve fast time x slow time Rx signal
+            scenario = RadarSimulation(scenario);
+            
+            %% Signal Processing (Single frame)
+            
+            % Perform signal processing on received signal
+            scenario.cube = SignalProcessing(scenario);
+            
+            %% Data Processing (Single frame)
+            
+            % Perform radar detection
+            scenario.detection = Detection(scenario);
         
-        %% Signal Processing (Single frame)
-        
-        % Perform signal processing on received signal
-        scenario.cube = SignalProcessing(scenario);
-        
-        %% Data Processing (Single frame)
-        
-        % Perform radar detection
-        scenario.detection = Detection(scenario);
+        else
+            
+            % Read out
+            fprintf('Skipping frame %d simulation.\n\n', scenario.flags.frame);
+            
+            % Add dummy result otherwise
+            scenario.detection = struct(...
+                'detect_logical',   false, ...
+                'detect_list',      struct( ...
+                'num_detect',       0, ...
+                'time',             scenario.flags.frameMidTime));
+        end
         
         % Perform single unit tracking
         scenario = Tracking_SingleUnit(scenario);

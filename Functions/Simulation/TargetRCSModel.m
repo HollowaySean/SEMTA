@@ -19,12 +19,14 @@ lambda = c./rcs_out.freq;               % Vector of lambda values in m
 %% Constant RCS Function
 
 function value = staticRCS(rcs, ang, freq)
+    ang = mod(ang + 180, 360) - 180;
     value = db2pow(rcs.ave_rcs) * ones(length(ang),length(freq));
 end
 
 %% Fluctuating RCS Model Function
 
 function value = modelRCS(rcs, ang, freq)
+    ang = mod(ang + 180, 360) - 180;
     value = interp2(rcs.freq_array, rcs.ang_array, rcs.rcs_array, freq, ang, 'nearest');
 end
 

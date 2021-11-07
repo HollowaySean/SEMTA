@@ -46,7 +46,8 @@ scenario.radarsetup = struct( ...
     'num_train',    [15 2], ...         % Number of R-D training cells for CFAR detection
     'rng_limits',   [500, 7000], ...    % Min/max range values, to avoid false alarms
     'vel_comp',     true, ...           % T/F compensate for range bin migration in binary integration
-    'det_m',        2);                 % M for m-of-n processing
+    'det_m',        2, ...              % M for m-of-n processing
+    'min_SNR',      10.5);              % Minimum detection SNR, used for estimation, does not effect detection
 
 % Tracking Parameters
 tracking = struct( ...
@@ -66,7 +67,7 @@ scenario.radarsetup.tracking_single = tracking;
 %% Radar Mode Setup
 
 % Set initial mode
-scenario.radarsetup.initial_mode = 'ideal';
+scenario.radarsetup.initial_mode = 'search';
 scenario.flags.mode = scenario.radarsetup.initial_mode;
 
 % Wait mode properties
