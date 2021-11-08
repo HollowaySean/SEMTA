@@ -83,16 +83,6 @@ n = physconst('Boltzmann')*290;
 Gt = db2pow(rs.tx_ant_gain);
 Gr = db2pow(rs.rx_ant_gain);
 
-% Loss due to Rx Steering at 3dB points (removed)
-% steering_loss = 0.5;
-
-% Loss due to use of window function
-% if strcmp(rs.r_win, 'hamming')
-%     processing_loss = db2pow(-1.35);
-% else
-%     processing_loss = 1;
-% end
-
 % Power fading due to transmit and receive overlap
 fade = [1; ...
     2 * Range / (physconst('Lightspeed') * rs.t_p); ...
