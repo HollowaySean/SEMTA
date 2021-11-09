@@ -1,9 +1,6 @@
 ### Settings ###
 
 # Import statements
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import os
 import numpy as np
 import scipy.constants as constants
@@ -621,6 +618,18 @@ def ProcessFiles(foldername):
     if not os.path.exists(outputPath):
         os.makedirs(outputPath)
     
+    # Set up data headers 
+    headers = (
+        'Measurement Number', 'Origin Unit', 'Time',
+        'Cross-Track Radar Position',           'Along-Track Radar Position',
+        'Cross-Track Position',                 'Along-Track Position',
+        'Cross-Track Velocity',                 'Along-Track Velocity',
+        'Cross-Track Acceleration',             'Along-Track Acceleration',
+        'Cross-Track Position Variance',        'Along-Track Position Variance',
+        'Cross-Track Velocity Variance',        'Along-Track Velocity Variance',
+        'Cross-Track Acceleration Variance',    'Along-Track Acceleration Variance',
+    )
+    
     # Generate result matrix
     stateEstimate = [None]*numFr
     for fr in range(numFr):
@@ -628,27 +637,15 @@ def ProcessFiles(foldername):
             [fr+1] \
             + [trackingMulti['unit'][fr]+1] \
             + [trackingMulti['time'][fr]] \
-            + [float(el) for el in trackingMulti['estimate'][fr]['pos']]
-
+            + [0, 0] \
+            + [float(trackingMulti['estimate'][fr]['state'][ind]) for ind in [0, 3, 1, 4, 2, 5]] \
+            + [float(trackingMulti['estimate'][fr]['covar'][ind, ind]) for ind in [0, 3, 1, 4, 2, 5]]
 
     # Save multistatic results
     with open(outputPath + '/multi.csv', mode='w', newline='') as csv_out:
         csvWriter = csv.writer(csv_out, delimiter=',', quotechar='"')
-        csvWriter.writerow(('Measurement Number', 'Origin Unit', 'Time', 'Cross-Track Position', 'Along-Track Position'))
+        csvWriter.writerow(headers)
         csvWriter.writerows(stateEstimate)
-
-    # Plot multistatic results
-    data = np.array(stateEstimate)
-    xs = data[:,3]
-    ys = data[:,2]
-    xlims = (np.min(xs), np.max(xs))
-    ylims = (np.min(ys), np.max(ys))
-    plt.scatter(xs, ys)
-    plt.grid()
-    plt.xlim(xlims)
-    plt.ylim(ylims)
-    plt.savefig(outputPath + '/multi.png')
-    plt.close()
 
     # Save single unit results
     for rx in range(numFiles):
@@ -658,26 +655,18 @@ def ProcessFiles(foldername):
             numFr = trackSingle[rx]['n_fr']
             singleEstimate = [None]*numFr
             for fr in range(numFr):
-                singleEstimate[fr] = [fr+1] \
-                + [trackSingle[rx]['estimate'][fr]['time']] \
+                singleEstimate[fr] = \
+                [fr+1] + [rx] + [trackSingle[rx]['estimate'][fr]['time']] \
+                + [float(trackSingle[rx]['radar_pos'][ind]) for ind in [0,1]] \
                 + [float(trackSingle[rx]['estimate'][fr]['cart'][0] + trackSingle[rx]['radar_pos'][0])] \
-                + [float(trackSingle[rx]['estimate'][fr]['cart'][1] + trackSingle[rx]['radar_pos'][1])]
+                + [float(trackSingle[rx]['estimate'][fr]['cart'][1] + trackSingle[rx]['radar_pos'][1])] \
+                + [float(trackSingle[rx]['estimate'][fr]['state'][ind]) for ind in [1, 4, 2, 5]] \
+                + [float(trackSingle[rx]['estimate'][fr]['covar'][ind,ind]) for ind in [0, 3, 1, 4, 2, 5]]
 
             # Write to CSV file
             csvWriter = csv.writer(csv_out, delimiter=',', quotechar='"')
-            csvWriter.writerow(('Measurement Number', 'Time', 'Cross-Track Position', 'Along-Track Position'))
+            csvWriter.writerow(headers)
             csvWriter.writerows(singleEstimate)
-
-            # Plot single unit results
-            data = np.array(singleEstimate)
-            xs = data[:,3]
-            ys = data[:,2]
-            plt.scatter(xs, ys)
-            plt.grid()
-            plt.xlim(xlims)
-            plt.ylim(ylims)
-            plt.savefig(os.path.join(outputPath, filenameList[rx] + '.png'))
-            plt.close()
 
 
 # Main method

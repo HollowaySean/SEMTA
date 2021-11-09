@@ -195,7 +195,14 @@ def TrackingPlot(dataFrame, frameNumber):
                 config={**graphConfig, **dict({'toImageButtonOptions':{'filename':'multistatic_labeled'}})})
             ])
     else:
-        return dcc.Graph(
+        positionString = 'Unit {} Position: ({}, {}) km.'\
+            .format(
+                frameNumber,
+                int(dataFrame[frameNumber]['Along-Track Radar Position'][0] / 1000),
+                int(dataFrame[frameNumber]['Cross-Track Radar Position'][0] / 1000)
+            )
+        return html.Div(children=[
+        dcc.Graph(
             id = 'scatter_plot' + str(frameNumber), 
             figure = px.scatter(
                 dataFrame[frameNumber], 
@@ -203,7 +210,8 @@ def TrackingPlot(dataFrame, frameNumber):
                 y='Cross-Track Position', 
                 x='Along-Track Position', 
                 hover_data=['Time']),
-            config={**graphConfig, **dict({'toImageButtonOptions':{'filename':'unit' + str(frameNumber)}})})
+            config={**graphConfig, **dict({'toImageButtonOptions':{'filename':'unit' + str(frameNumber)}})}),
+        html.P(children=[positionString], style={'text-align': 'center', 'font-family':'sans-serif'})])
 
 def GenerateDropdown():
 
