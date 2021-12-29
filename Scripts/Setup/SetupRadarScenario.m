@@ -67,7 +67,7 @@ scenario.radarsetup.tracking_single = tracking;
 %% Radar Mode Setup
 
 % Set initial mode
-scenario.radarsetup.initial_mode = 'search';
+scenario.radarsetup.initial_mode = 'static';
 scenario.flags.mode = scenario.radarsetup.initial_mode;
 
 % Wait mode properties

@@ -25,7 +25,7 @@ scenario.simsetup = struct( ...
     'alert_address',        'hollowayseanm@gmail.com', ...
     ...                                                 % Email address for status updates
     'par_cfar',             false, ...                  % Use parallel processing for CFAR T/F
-    'fast_simulation',      true, ...                   % Skip simulation for very low probability detections
+    'fast_simulation',      false, ...                   % Skip simulation for very low probability detections
     'filename',             'LiveServerTest', ...       % Filename to save data as
     'timestampfile',        true, ...                   % Add timestamp to file name
     'save_format',          save_format, ...            % File types to save figures

@@ -124,7 +124,7 @@ end
 % viewRangeCube(scenario);
 
 % View Range-Doppler heat map
-viewRDCube(scenario);
+% viewRDCube(scenario);
 
 % View radar detections
 % viewDetections(scenario);
@@ -149,7 +149,7 @@ else
 end
 
 % Visualize multilateration result
-% viewTrackingMulti(scenario);
+viewTrackingMulti(scenario);
 
 %% Results Processing
 
